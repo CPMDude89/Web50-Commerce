@@ -9,10 +9,16 @@ class User(AbstractUser):
 class Listing(models.Model):
     # name of the listing to be auctioned
     name = models.CharField(max_length=64)
+    # starting bid amount
+    starting_bid = models.DecimalField(decimal_places=2, max_digits=10)
+    # category of listing
+    category = models.CharField(max_length=64, blank=True)
     # a text field description to be displayed with the listing
     description = models.TextField(max_length=512)
-    # image of the listing
-    image = models.ImageField(upload_to="auctions/")
+    # image of the listing -- OPTIONAL
+    image = models.ImageField(upload_to="auctions/", blank=True)
+    # is the listed item currently active (able to be bid on)
+    active = models.BooleanField(default=True)
 
     def __str__(self):
         return f"{self.name}"

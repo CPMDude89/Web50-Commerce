@@ -3,9 +3,10 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
-from .util import listingSearch
+from .util import listingSearch, NewListingForm
 
 from .models import User, Listing
+
 
 
 def index(request):
@@ -64,7 +65,7 @@ def register(request):
         return render(request, "auctions/register.html")
 
 
-def listing(request, listing_name):
+def listing_view(request, listing_name):
     findListing = listingSearch(listing_name)
     if findListing:
         listing = Listing.objects.get(pk=findListing)
@@ -79,3 +80,20 @@ def listing(request, listing_name):
         "bids": bids,
         "comments": comments
     })
+
+def new_listing(request):
+    if request.method == "POST":
+        form = NewListingForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return HttpResponseRedirect(reverse("index"))
+        else:
+            return render(request, "auctions/new_listing.html", {
+                "form": form
+            })
+    
+    else:
+        form = NewListingForm()
+        return render(request, "auctions/new_listing.html", {
+            "form": form
+        })
