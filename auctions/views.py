@@ -3,8 +3,9 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from .util import listingSearch
 
-from .models import User
+from .models import User, Listing
 
 
 def index(request):
@@ -62,7 +63,19 @@ def register(request):
     else:
         return render(request, "auctions/register.html")
 
+
 def listing(request, listing_name):
+    findListing = listingSearch(listing_name)
+    if findListing:
+        listing = Listing.objects.get(pk=findListing)
+    else:
+        return render(request, "auctions/not_found.html")
+
+    bids = listing.bids.all()
+    comments = listing.comments.all()
+    
     return render(request, "auctions/listing.html", {
-        "listing_name": listing_name
+        "listing": listing,
+        "bids": bids,
+        "comments": comments
     })

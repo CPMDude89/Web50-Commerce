@@ -1,8 +1,32 @@
 {% extends "auctions/layout.html" %} 
-
+{% load static %} 
 
 {% block body %}
-LISTING: {{listing_name}}
+<h1>LISTING: {{listing.name}}</h1>
 
+<img src="{{listing.image.url}}" alt="listing picture" />
 
+<h2>Bids</h2>
+<ol>
+  {% for b in bids %}
+  <li>Bidder: {{ b.bidder }} at {{ b.date }}</li>
+    <ul>
+        <li>${{ b.amount }}</li>
+    </ul>
+  {% empty %}
+  <li>Currently no bids on this listing</li>
+  {% endfor %}
+</ol>
+
+<h2>Comments</h2>
+<ul>
+    {% for c in comments %}
+    <li>Commenter: {{ c.commenter }} at {{ c.date }}</li>
+    <ul>
+        <li>{{c.text}}</li>
+    </ul>
+    {% empty %}
+    <li>Currently no comments on this listing</li>
+    {% endfor %}
+</ul>
 {% endblock %}
