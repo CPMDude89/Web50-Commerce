@@ -2,17 +2,34 @@
 
 {% block body %}
 
-{% if anyActive %}
-<ul>
-    {% for listing in listings %}
-    <li><a href="{% url 'listing' listing.name %}">{{ listing.name }}</a>
-    <li>{{ listing.description }}</li>
-    {% if listing.image %}
-        <li><a href="{% url 'listing' listing.name %}"><img src="{{ listing.image.url }}" alt="listing image" width="150" height="100"></a></li>
-    {% endif %}
-{% endfor%}
-</ul>
+<h2>Listings under the category: <strong>{{category}}</strong></h2>
 
+{% if anyActive %}
+    <ul>
+        {% for listing in listings %}
+            <div class='row'>
+                <li><a href="{% url 'listing' listing.name %}"><h3>{{ listing.name }}</h3></a></li>
+            </div>
+            <ul>
+                <div class='row'>
+                    <div class='col-3'>
+                        {% if listing.image %}
+                            <li><a href="{% url 'listing' listing.name %}"><img src="{{ listing.image.url }}" alt="listing image" width="300" height="300"></a></li>
+                        {% endif %}
+                    </div>
+                    <div class='col-9'>
+                        {% if listing.bids.last.amount > listing.starting_bid %}
+                            <li>Current highest bid is: <strong>${{ listing.bids.last.amount }}</strong></li>
+                        {% else %}
+                            <li>Starting bid price for this item is: $<strong>{{ listing.starting_bid }}</strong></li>
+                        {% endif %}
+
+                        <li>{{ listing.description }}</li>
+                    </div>
+                </div>
+            </ul>
+        {% endfor %}
+    </ul>
 {% else %}
 <h1>No active listings under this category</h1>
 {% endif %}

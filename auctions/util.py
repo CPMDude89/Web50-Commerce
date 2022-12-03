@@ -9,6 +9,11 @@ class NewListingForm(ModelForm):
         model = Listing
         fields = ['name', 'starting_bid', 'category', 'description', 'image', 'user']
         widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'starting_bid': forms.NumberInput(attrs={'class': 'form-control'}),
+            'category': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': "form-control"}),
+            'image': forms.FileInput(attrs={'class': "form-control"}),
             'user': forms.HiddenInput()
         }
 
@@ -19,6 +24,7 @@ class BidForm(ModelForm):
         # we will fill in these fields in the view layer. User just needs to submit the bid amount
         widgets = {
             'user': forms.HiddenInput(),
+            'amount': forms.NumberInput(attrs={'class': "form-control"}),
             'listing': forms.HiddenInput()
         }
 
@@ -29,6 +35,7 @@ class CommentForm(ModelForm):
         labels = {'text': ""}
         widgets = {
             'user': forms.HiddenInput(),
+            'text': forms.Textarea(attrs={'class': "form-control"}),
             'listing': forms.HiddenInput()
         }
 
@@ -36,18 +43,9 @@ class CategoriesForm(ModelForm):
     class Meta:
         model = Category
         fields = ['name']
-
-""""
-class CloseListingForm(ModelForm):
-    class Meta:
-        model = Listing
-        fields = ['name','active', 'user_winner']
         widgets = {
-            'name': forms.HiddenInput(),
-            'active': forms.HiddenInput(),
-            'user_winner': forms.HiddenInput()
-        }    
-"""
+            'name': forms.TextInput(attrs={'class': 'form-control'})
+        }
 
 class CloseListingForm(forms.Form):
     user_winner = forms.CharField(max_length=512, widget=forms.HiddenInput(), required=False)

@@ -6,10 +6,6 @@ from django.db import models
 class User(AbstractUser):
     pass
 
-
-
-# auction listings
-
 # categories for users to choose to add to a listing
 class Category(models.Model):
     name = models.CharField(max_length=64, unique=True)
@@ -17,6 +13,7 @@ class Category(models.Model):
     def __str__(self):
         return f"{self.name}"
 
+# 'things' to be auctioned. The primary class of this app
 class Listing(models.Model):
     # name of the listing to be auctioned
     name = models.CharField(max_length=64, unique=True)
@@ -39,7 +36,6 @@ class Listing(models.Model):
         return f"{self.name}"
 
     # double check listing name uniqueness by checking case 
-    
     def clean(self):
         allNames = Listing.objects.filter(name__iexact=self.name).exclude(name__exact=self.name)
         if allNames:
@@ -61,6 +57,7 @@ class Bid(models.Model):
     def __str__(self):
         return f"{self.user.username} has entered a bid of ${self.amount} on {self.listing.name}"
 
+    # make sure that each bid is at least the starting price, and/or is higher than the current highest bid
     def clean(self):
         if self.amount < self.listing.starting_bid:
             raise ValidationError('Each bid must be at least as large as the starting price.')

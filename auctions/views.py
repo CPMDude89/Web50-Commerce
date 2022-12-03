@@ -14,7 +14,6 @@ from .models import User, Listing, Watchlist, Category
 def index(request):
     activeList = Listing.objects.filter(active=True)
 
-
     return render(request, "auctions/index.html", {
         "activeList": activeList
     })
@@ -75,9 +74,11 @@ def register(request):
         return render(request, "auctions/register.html")
 
 
+# handles the listing page. There's got to be a way to do this more efficiently, but it works ----------------------
 def listing_view(request, listing_name):
     # ------ first things first, get the listing  
     findListing = listingSearch(listing_name)
+    # check if listing exists
     if findListing:
         listing = Listing.objects.get(pk=findListing) # remember, listingSearch() returns an int -- which is a pk
     else:
@@ -102,51 +103,57 @@ def listing_view(request, listing_name):
             wform = AddRemoveWatchlistForm(initial={'in_list': False, 'listing': listing.name})
 
         # --- BIDS ---
-        if request.method == "POST" and 'bform_button' in request.POST:
+        if request.method == "POST" and 'bform_button' in request.POST: # if BidForm button was clicked
             # validate incoming form (bid) data
             bform = BidForm(request.POST)
             if bform.is_valid():
                 bform.save()
-                bform = BidForm(initial={'user': request.user, 'listing': listing})
+                bform = BidForm(initial={'user': request.user, 'listing': listing}) # instantiate a new BidForm so user can keep bidding on same page
             else:
-                bform = BidForm(request.POST)
+                bform = BidForm(request.POST) # error handling
+        # GET request
         else: 
             bform = BidForm(initial={'user': request.user, 'listing': listing})
 
         # --- COMMENTS ---
-        if request.method == "POST" and "cform_button" in request.POST:
+        if request.method == "POST" and "cform_button" in request.POST: # if CommentForm button was clicked
             # validate incoming form (comment) data
             cform = CommentForm(request.POST)
             if cform.is_valid():
                 cform.save()
-                cform = CommentForm(initial={'user': request.user, 'listing': listing})
+                cform = CommentForm(initial={'user': request.user, 'listing': listing}) # instantiate a new CommentForm so user can keep commenting on same page
             else:
-                cform = CommentForm(request.POST)
+                cform = CommentForm(request.POST) # error handling
+        # GET request
         else:
             cform = CommentForm(initial={'user': request.user, 'listing': listing})
 
         # --- CLOSE LISTING ---
-        if request.method == "POST" and 'closeform_button' in request.POST:
-            closeform = CloseListingForm(request.POST)
+        if request.method == "POST" and 'closeform_button' in request.POST: # if close listing button was clicked
+            closeform = CloseListingForm(request.POST) 
             if closeform.is_valid():
                 listing.active = False
                 winner = User.objects.get(username=closeform.cleaned_data['user_winner'])
-                listing.user_winner = winner
+                listing.user_winner = winner # just a variable for the template
                 listing.save()
             else:
-                closeform = CloseListingForm(request.POST)
-                listing_active = listing.active
+                closeform = CloseListingForm(request.POST) # error handling
+                listing_active = listing.active # just a template variable
         
+        # GET request
         else:
-            if not listing.bids.all():
-                closeform = CloseListingForm()
+            # if NO BIDS have been placed on this listing, don't allow user to close listing
+            if not listing.bids.all(): 
+                closeform = CloseListingForm() # form is instantiated without a winner, so no user can be assigned winner
                 listing_active = listing.active
+            # if at least one BID has been placed, listing can be closed
             else:
                 winner = listing.bids.last().user
-                closeform = CloseListingForm(initial={'user_winner': winner})
+                # instantiate the form with the user who made the highest bid so if the form is sent via POST, it will contain the winner 
+                closeform = CloseListingForm(initial={'user_winner': winner}) 
                 listing_active = listing.active
 
-        listing_active = listing.active # <--- ????
+        listing_active = listing.active # I think this needs to be here if a successful closeform has been submitted
 
         # determine if the current logged in user is the user who made this listing
         if request.user == listing.user: 
@@ -164,6 +171,7 @@ def listing_view(request, listing_name):
         highest_bid = listing.bids.last()
         comments = listing.comments.all()
         
+        # -------- if user IS AUTHENTICATED
         return render(request, "auctions/listing.html", {
             "listing": listing,
             'highest_bid': highest_bid,
@@ -179,7 +187,7 @@ def listing_view(request, listing_name):
             'listing_active': listing_active
         })
 
-    # ------ if user is NOT authenticated ---
+    # ------ if user is NOT AUTHENTICATED ---
     else:
         bids = listing.bids.all()
         highest_bid = listing.bids.last()
@@ -195,16 +203,18 @@ def listing_view(request, listing_name):
         })
         
 
+
+# user can add or remove listings to a specific page that will display them --------------
 @login_required
 def watchlist(request):
-    # get the watchlist first, we'll need it no matter what
+    # first things first, get the watchlist for the user
     w_list = Watchlist.objects.get(user=request.user)
 
-    # use a http POST request to alter the state of the user's watchlist
+    # handle incoming POST request to either add or remove a listing from watchlist
     if request.method == 'POST':
         form = AddRemoveWatchlistForm(request.POST)
         if form.is_valid():
-            in_list = form.cleaned_data["in_list"]
+            in_list = form.cleaned_data["in_list"] # a boolean that tells us if the listing is in the user's watchlist or not
             listingTarget = Listing.objects.get(name__iexact=form.cleaned_data["listing"])
 
             # check if the listing in question is in the list, and either take it out or add it in
@@ -213,22 +223,24 @@ def watchlist(request):
             else:
                 w_list.listings.add(listingTarget)
 
-    # creates a new QuerySet, so we don't need to recreate the watchlist entirely here if some changes were made
+    # creates a new QuerySet for the template to use, if any changes were made, they will be reflected here now
     listings = w_list.listings.all()
     return render(request, "auctions/watchlist.html", {
         "listings": listings
     })
 
-
+# if a user is logged in, they can make a new listing -------------
+@login_required
 def new_listing(request):
+    # handle form submission - POST request
     if request.method == "POST":
         form = NewListingForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
-            return HttpResponseRedirect(reverse("index"))
+            form.save() # save a new listing 
+            return HttpResponseRedirect(reverse("index")) # redirect back to homepage
         else:
             return render(request, "auctions/new_listing.html", {
-                "form": form
+                "form": form # returns the form back to the browser
             })
     
     else:
@@ -237,6 +249,7 @@ def new_listing(request):
             "form": form
         })
 
+# really just here for debugging... -------------
 def all_listings(request):
     listings = Listing.objects.all()
 
@@ -244,9 +257,11 @@ def all_listings(request):
         'listings': listings
     })
 
+# list all categories, if a user is logged in, they can make a new one --------------
 def categories(request):
     categories_list = Category.objects.all()
 
+    # if a user tries to make a new category
     if request.method == "POST":
         form = CategoriesForm(request.POST)
         if form.is_valid():
@@ -255,19 +270,23 @@ def categories(request):
         else:
             form = CategoriesForm(request.POST)
     
+    # GET request
     else:
-        form = CategoriesForm()
+        form = CategoriesForm() 
 
     return render(request, "auctions/categories.html", {
         'categories_list': categories_list,
         'form': form
     })
 
+# list all active listings under a specific category ----------------
 def category_listings(request, category_name):
     # first things first, get the category
     category_ = Category.objects.get(name=category_name)
-    listings = Listing.objects.filter(category=category_)
+    listings = Listing.objects.filter(category=category_) # <--- not sure if I need to be careful like this with the 'category' variable. Probably not, but just to be safe...
 
+    # check if there are any active listings under this category
+    # if so, assign the queryset to a listings variable to use in the template
     checkActive = listings.filter(active=True)
     if checkActive:
         anyActive = True
@@ -277,5 +296,6 @@ def category_listings(request, category_name):
 
     return render(request, "auctions/category_listings.html", {
         'listings': listings,
-        'anyActive': anyActive
+        'anyActive': anyActive,
+        'category': category_
     })

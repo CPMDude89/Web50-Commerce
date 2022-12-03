@@ -1,32 +1,37 @@
 {% extends "auctions/layout.html" %}
 
 {% block body %}
-    {% if user.is_authenticated %}
-        <a href="{% url 'watchlist' %}"><h3>View Your Watchlist</h3></a>
-    {% endif %}
-
-    <h2>Active Listings</h2>
+<div class="row">
+    <div class="col">
+        <h2>Active Listings</h2>
+    </div>
+</div>
     <ul>
         {% for listing in activeList %}
-        <li><a href="{% url 'listing' listing.name %}">{{ listing.name }}</a></li>
-            <ul>
-                <li>{{ listing.description }}</li>
+        <div class='row'>
+            <li><a href="{% url 'listing' listing.name %}"><h3>{{ listing.name }}</h3></a></li>
+        </div>
+                <ul>
+                    <div class='row'>
+                        <div class='col-3'>
+                        {% if listing.image %}
+                            <li><a href="{% url 'listing' listing.name %}"><img src="{{ listing.image.url }}" alt="listing image" width="300" height="300"></a></li>
+                        {% endif %}
+                        </div>
+                        <div class='col-9'>
+                            {% if listing.bids.last.amount > listing.starting_bid %}
+                                <li>Current highest bid is: <strong>${{ listing.bids.last.amount }}</strong></li>
+                            {% else %}
+                                <li>Starting bid price for this item is: $<strong>{{ listing.starting_bid }}</strong></li>
+                            {% endif %}
 
-                {% if listing.bids.last.amount > listing.starting_bid %}
-                    <li>Current highest bid is: ${{ listing.bids.last.amount }}</li>
-                {% else %}
-                    <li>Starting bid price for this item is: ${{ listing.starting_bid }}</li>
-                {% endif %}
-
-                {% if listing.image %}
-                    <li><a href="{% url 'listing' listing.name %}"><img src="{{ listing.image.url }}" alt="listing image" width="150" height="100"></a></li>
-                {% endif %}
-            </ul>
-        </li>
+                            <li>{{ listing.description }}</li>
+                        </div>
+                    </div>
+                </ul>
+            </li>
         {% empty %}
-        <li>No active listings at this time</li>
+            <li><h4>No active listings at this time</h4></li>
         {% endfor %}
     </ul>
-
-
 {% endblock %}
