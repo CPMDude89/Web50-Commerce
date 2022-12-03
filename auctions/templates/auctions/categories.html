@@ -1,0 +1,24 @@
+{% extends "auctions/layout.html" %}
+
+{% block body %}
+
+<ul>
+    {% for c in categories_list %}
+        {% if c.listings %}
+            <li><a href="{% url 'category_listings' c.name %}">{{ c.name }}</a></li>
+        {% else %}
+            <li>{{c.name}}</li>
+        {% endif %}
+    {% endfor %}
+</ul>
+
+{% if user.is_authenticated %}
+<h2>Create a new category!</h2>
+    <form action="{% url 'categories' %}" method="post">
+        {% csrf_token %}
+        {{ form }}
+        <input type="submit" value="Submit Category" name="cat_button">
+    </form>
+{% endif %}
+
+{% endblock %}

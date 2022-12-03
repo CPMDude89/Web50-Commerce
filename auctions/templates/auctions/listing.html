@@ -2,31 +2,70 @@
 {% load static %} 
 
 {% block body %}
-<h1>LISTING: {{listing.name}}</h1>
+  <h1>LISTING: {{listing.name}}</h1>
 
-<img src="{{listing.image.url}}" alt="listing picture" />
+  {% if is_users_listing and listing_active %}
+    <h3>This is your active listing!</h3>
+    {% if listing.bids.all.exists %}
+      <form action="{% url 'listing' listing.name %}" method="post">
+        {% csrf_token %}
+        {{ closeform }}
+        <input type="submit" value="Close Listing" name='closeform_button'>
+      </form>
+    {% endif %}
+  {% elif is_users_listing and not listing_active %}
+    <h3>This is your listing, but it is not active</h3>
+  {% elif is_listing_winner %}
+    <h3>Congratulations! You have won this listing! Enjoy your {{listing.name}}!!!</h3>
+  {% endif %}
 
-<h2>Bids</h2>
-<ol>
-  {% for b in bids %}
-  <li>Bidder: {{ b.bidder }} at {{ b.date }}</li>
-    <ul>
-        <li>${{ b.amount }}</li>
-    </ul>
-  {% empty %}
-  <li>Currently no bids on this listing</li>
-  {% endfor %}
-</ol>
+  <img src="{{listing.image.url}}" alt="listing picture" />
 
-<h2>Comments</h2>
-<ul>
-    {% for c in comments %}
-    <li>Commenter: {{ c.commenter }} at {{ c.date }}</li>
-    <ul>
+  <h2>Bids</h2>
+    {% if highest_bid %}
+      <h4>The current price to beat for this item is: ${{highest_bid.amount}}. Made by {{highest_bid.user.username}} at {{highest_bid.date}}</h4>
+    {% else %}
+      <h4>No bids yet. Starting price is: ${{listing.starting_bid}}</h4>
+    {% endif %}
+
+
+  <h2>Comments</h2>
+  <ul>
+      {% for c in comments %}
+      <li>Commenter: {{ c.user }} at {{ c.date }}</li>
+      <ul>
         <li>{{c.text}}</li>
-    </ul>
-    {% empty %}
-    <li>Currently no comments on this listing</li>
-    {% endfor %}
-</ul>
+      </ul>
+      {% empty %}
+      <li>Currently no comments on this listing</li>
+      {% endfor %}
+  </ul>
+
+  {% if user.is_authenticated %}
+    <h3>{{ message }}</h3>
+    <form action="{% url 'watchlist' %}" method="post">
+      {% csrf_token %}
+      {{ wform }}
+      <input type="submit" value="{{ button_message }}">
+    </form>
+
+    {% if listing_active %}
+      <h3>Place a bid here!</h3>
+      <h3>{{ message1 }}</h3>
+      <form action="{% url 'listing' listing.name %}" method="post">
+      {% csrf_token %}
+      {{ bform }}
+      <input type="submit" value="Confirm Bid" name="bform_button">
+      </form>
+    {% endif %}
+
+    <h3>Leave a comment here!</h3>
+    <form action="{% url 'listing' listing.name %}" method="post">
+    {% csrf_token %}
+    {{ cform }}
+    <input type="submit" value="Submit Comment" name="cform_button">
+    </form>
+
+  {% endif %}
+
 {% endblock %}
